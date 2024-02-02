@@ -1,9 +1,14 @@
 package parkinglot
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/google/go-cmp/cmp"
+)
 
 var (
-	ErrParkingLotfull = errors.New("Parking lot is full")
+	ErrParkingLotfull    = errors.New("Parking lot is full")
+	ErrInValidSlotNumber = errors.New("slot number is Invalid")
 )
 
 type ParkingLot struct {
@@ -11,17 +16,52 @@ type ParkingLot struct {
 	Slots []Slot
 }
 
-func NewParkingLot(id string, slotCount int) *ParkingLot {
+func NewParkingLot(id string, slotCount int) ParkingLot {
 	slots := make([]Slot, slotCount)
-	return &ParkingLot{ID: id, Slots: slots}
+	return ParkingLot{ID: id, Slots: slots}
 }
 
-func (p *ParkingLot) Park(car Car) (int, error) {
+func (p *ParkingLot) IsParkingLotFull() bool {
+	for _, slot := range p.Slots {
+		if slot.Status == Empty {
+			return false
+		}
+	}
+	return true
+}
+
+func (p *ParkingLot) Park(car Car) (Ticket, error) {
+	if p.IsParkingLotFull() {
+		return Ticket{}, ErrParkingLotfull
+	}
 	for i, slot := range p.Slots {
 		if slot.Status == Empty {
 			p.Slots[i] = Slot{Status: Full, Car: car}
-			return i, nil
+			return Ticket{
+				ParkingLotID:    p.ID,
+				SlotID:          i,
+				CarRegistration: car.RegistrationNum,
+			}, nil
 		}
 	}
-	return -1, ErrParkingLotfull
+	return Ticket{}, ErrParkingLotfull
+}
+
+func (p *ParkingLot) Unpark(ticket Ticket) (Car, error) {
+	if ticket.SlotID < 0 || ticket.SlotID >= len(p.Slots) {
+		return Car{}, ErrInValidSlotNumber
+	}
+	slot := p.Slots[ticket.SlotID]
+	if slot.Status == Empty {
+		return Car{}, errors.New("slot is already empty")
+	}
+
+	car := slot.Car
+	slot.Status = Empty
+	slot.Car = Car{}
+	return car, nil
+}
+
+func (p ParkingLot) Equals(other ParkingLot) bool {
+	return cmp.Equal(p, other)
 }

@@ -8,6 +8,7 @@ const (
 )
 
 type Slot struct {
+	ID     int
 	Status SlotStatus
 	Car    Car
 }
