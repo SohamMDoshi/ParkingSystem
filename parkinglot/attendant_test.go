@@ -25,6 +25,19 @@ func TestAssigningInvaildParkingLotToAttendant(t *testing.T) {
 	assert.NotEqual(t, parkinglotTwo.ID, attendat.AssignedLots["PL001"].ID)
 }
 
+func TestAssigningSameParkingLotToTwoAttendant(t *testing.T) {
+	firstAttendat := NewAttendant("ABC")
+	secondAttendat := NewAttendant("John")
+
+	parkinglot := NewParkingLot("PL001", 2)
+
+	firstAttendat.Assign(parkinglot)
+	secondAttendat.Assign(parkinglot)
+
+	assert.Equal(t, parkinglot.ID, firstAttendat.AssignedLots["PL001"].ID)
+	assert.Equal(t, parkinglot.ID, secondAttendat.AssignedLots["PL001"].ID)
+}
+
 func TestParkingCar(t *testing.T) {
 	attendant := NewAttendant("John")
 	parkingLot := NewParkingLot("PL001", 2)
@@ -162,6 +175,52 @@ func TestUnparkingCar(t *testing.T) {
 	assert.True(t, expectedTicket.Equals(ticket))
 
 	unparkedCar, err2 := attendant.Unpark(ticket)
+	assert.NoError(t, err2)
+	assert.True(t, unparkedCar.Equals(car))
+}
+
+func TestUnParkingCarWithInvalidTicket(t *testing.T) {
+	attendant := NewAttendant("John")
+	parkingLot := NewParkingLot("PL001", 2)
+
+	attendant.Assign(parkingLot)
+	assert.Equal(t, parkingLot.ID, attendant.AssignedLots["PL001"].ID)
+
+	car, err := NewCar("Black", "MH12AA3003")
+	assert.NoError(t, err)
+	assert.True(t, car.Equals(Car{"Black", "MH12AA3003"}))
+
+	ticket, err1 := attendant.Park(car)
+	expectedTicket := Ticket{ParkingLotID: "PL001", SlotID: 0, CarRegistration: "MH12AA3003"}
+	assert.NoError(t, err1)
+	assert.True(t, expectedTicket.Equals(ticket))
+
+	invalidTicket := Ticket{ParkingLotID: "PL001", SlotID: 1, CarRegistration: "JJ88XX4444"}
+	_, err2 := attendant.Unpark(invalidTicket)
+	assert.Error(t, err2)
+}
+
+func TestUnpakingCarWhichIsParkedAnotherAttendant(t *testing.T) {
+	firstAttendant := NewAttendant("John")
+	secondAttendat := NewAttendant("ABC")
+	parkingLot := NewParkingLot("PL001", 2)
+
+	firstAttendant.Assign(parkingLot)
+	assert.Equal(t, parkingLot.ID, firstAttendant.AssignedLots["PL001"].ID)
+
+	secondAttendat.Assign(parkingLot)
+	assert.Equal(t, parkingLot.ID, secondAttendat.AssignedLots["PL001"].ID)
+
+	car, err := NewCar("Black", "MH12AA3003")
+	assert.NoError(t, err)
+	assert.True(t, car.Equals(Car{"Black", "MH12AA3003"}))
+
+	ticket, err1 := firstAttendant.Park(car)
+	expectedTicket := Ticket{ParkingLotID: "PL001", SlotID: 0, CarRegistration: "MH12AA3003"}
+	assert.NoError(t, err1)
+	assert.True(t, expectedTicket.Equals(ticket))
+
+	unparkedCar, err2 := secondAttendat.Unpark(ticket)
 	assert.NoError(t, err2)
 	assert.True(t, unparkedCar.Equals(car))
 }

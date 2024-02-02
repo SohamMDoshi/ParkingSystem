@@ -30,7 +30,19 @@ func (p *ParkingLot) IsParkingLotFull() bool {
 	return true
 }
 
+func (p *ParkingLot) IsCarPresent(registration string) bool {
+	for _, slot := range p.Slots {
+		if slot.Status == Full && slot.Car.RegistrationNum == registration {
+			return true
+		}
+	}
+	return false
+}
+
 func (p *ParkingLot) Park(car Car) (Ticket, error) {
+	if p.IsCarPresent(car.RegistrationNum) {
+		return Ticket{}, errors.New("Car with same registration number is already present")
+	}
 	if p.IsParkingLotFull() {
 		return Ticket{}, ErrParkingLotfull
 	}

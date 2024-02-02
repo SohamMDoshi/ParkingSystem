@@ -24,6 +24,19 @@ func TestParkCar(t *testing.T) {
 	assert.Equal(t, Full, parkinglot.Slots[ticket.SlotID].Status)
 }
 
+func TestParkingSameCarTwice_ExpectError(t *testing.T) {
+	parkinglot := NewParkingLot("PL001", 2)
+
+	car := Car{Color: "Red", RegistrationNum: "MH07SS8888"}
+	ticket, err := parkinglot.Park(car)
+	expectedTicket := Ticket{ParkingLotID: "PL001", SlotID: 0, CarRegistration: "MH07SS8888"}
+	assert.NoError(t, err)
+	assert.True(t, expectedTicket.Equals(ticket))
+
+	_, err1 := parkinglot.Park(car)
+	assert.Error(t, err1)
+}
+
 func TestParkCarWhenParkingLotIsFull_ExpectError(t *testing.T) {
 	parkinglot := NewParkingLot("PL001", 1)
 
